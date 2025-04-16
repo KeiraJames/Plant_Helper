@@ -29,7 +29,7 @@ class PlantNetAPI:
 
 # ---------- Load Care Info ----------
 def load_care_info(plant_name):
-    with open("plants_with_personality3_copy.json", "r") as f:
+    with open("plant_data.json", "r") as f:
         plant_data = json.load(f)
     for plant in plant_data:
         if plant["Plant Name"].lower() == plant_name.lower():
@@ -87,8 +87,8 @@ if page == "Upload & Identify":
         for sender, msg in st.session_state.current_chat:
             st.markdown(f"**{sender}:** {msg}")
 
-        # Save or Discard options
-        save_or_discard = st.radio("Do you want to save or discard this?", ["Choose...", "Save", "Discard"])
+        # Save or Discard options (without the "Choose..." option)
+        save_or_discard = st.radio("Do you want to save or discard this?", ["Save", "Discard"])
 
         if save_or_discard == "Discard":
             st.warning("Upload a new photo to try again.")
