@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 
-st.set_page_config(page_title="Photo Uploader", layout="centered")
+st.set_page_config(page_title="Photo Uploader", layout="wide")
 
 # Store photos in memory
 if "saved_photos" not in st.session_state:
@@ -9,28 +9,7 @@ if "saved_photos" not in st.session_state:
 
 # ===== Sidebar Section =====
 st.sidebar.header("🖼️ Saved Photos")
-if st.session_state.saved_photos:
-    for name, data_url in st.session_state.saved_photos.items():
-        html_viewer = f"""
-        <html>
-          <head><title>{name}</title></head>
-          <body style="text-align:center; padding:2em;">
-            <h2>{name}</h2>
-            <img src="{data_url}" style="max-width:90%; border:1px solid #ccc;" />
-            <p><i>This is your saved photo.</i></p>
-          </body>
-        </html>
-        """
-        html_encoded = base64.b64encode(html_viewer.encode()).decode()
-        viewer_url = f"data:text/html;base64,{html_encoded}"
-        st.sidebar.markdown(f"**{name}**", unsafe_allow_html=True)
-        st.sidebar.markdown(f"""
-            <a href="{viewer_url}" target="_blank">
-                <button style="padding:4px 8px;">📂 View</button>
-            </a>
-        """, unsafe_allow_html=True)
-else:
-    st.sidebar.info("No saved photos yet.")
+selected_photo = st.sidebar.selectbox("Select a saved photo to view:", options=[""] + list(st.session_state.saved_photos.keys()))
 
 # ===== Main Area =====
 st.title("📸 Upload and Save Your Photo")
@@ -49,3 +28,8 @@ if uploaded_file and photo_name:
         data_url = f"data:{mime_type};base64,{encoded}"
         st.session_state.saved_photos[photo_name] = data_url
         st.success(f"Saved as '{photo_name}' 🎉")
+
+# If a saved photo is selected from the sidebar, display it below
+if selected_photo:
+    st.subheader(f"📸 Viewing: {selected_photo}")
+    st.image(st.session_state.saved_photos[selected_photo], caption=selected_photo, use_container_width=True)
