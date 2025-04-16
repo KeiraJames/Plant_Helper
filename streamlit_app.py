@@ -43,6 +43,15 @@ if "saved_photos" not in st.session_state:
 if "current_chat" not in st.session_state:
     st.session_state.current_chat = []
 
+if "uploaded_image" not in st.session_state:
+    st.session_state.uploaded_image = None
+
+if "plant_name" not in st.session_state:
+    st.session_state.plant_name = None
+
+if "care_info" not in st.session_state:
+    st.session_state.care_info = None
+
 # ---------- Sidebar Navigation ----------
 page = st.sidebar.radio("Navigation", ["Upload & Identify", "View Saved Photos"])
 
@@ -52,6 +61,9 @@ if page == "Upload & Identify":
     uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
     if uploaded_file:
+        # Store the uploaded image in session state
+        st.session_state.uploaded_image = uploaded_file.getvalue()
+
         st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
 
         # Process identification and display care info
@@ -61,9 +73,12 @@ if page == "Upload & Identify":
 
         api = PlantNetAPI(api_key="2b10X3YLMd8PNAuKOCVPt7MeUe")
         plant_name = api.identify_plant(temp_path)
+        st.session_state.plant_name = plant_name
         st.subheader(f"Identified Plant: {plant_name}")
 
         care_info = load_care_info(plant_name)
+        st.session_state.care_info = care_info
+
         if care_info:
             st.markdown("### 🌿 Plant Care Info")
             for k, v in care_info.items():
@@ -95,7 +110,7 @@ if page == "Upload & Identify":
                 plant_nickname = st.text_input("Give this plant a name to save:", key="nickname")
                 if plant_nickname:
                     st.session_state.saved_photos[plant_nickname] = {
-                        "image_bytes": uploaded_file.getvalue(),
+                        "image_bytes": st.session_state.uploaded_image,
                         "plant_name": plant_name,
                         "care_info": care_info,
                         "chat": st.session_state.current_chat.copy()
@@ -106,8 +121,11 @@ if page == "Upload & Identify":
         
         with col2:
             if st.button("Discard"):
+                st.session_state.uploaded_image = None
+                st.session_state.plant_name = None
+                st.session_state.care_info = None
                 st.session_state.current_chat = []  # Clear chat history
-                st.rerun()  # Refresh to upload a new photo
+                st.experimental_rerun()  # Refresh to upload a new photo
 
 # ---------- Page 2: View Saved ----------
 elif page == "View Saved Photos":
