@@ -94,7 +94,7 @@ if page == "Upload & Identify":
             st.warning("Upload a new photo to try again.")
             # Clear the state and rerun to upload again
             st.session_state.current_chat = []  # Clear chat history
-            st.experimental_rerun()
+            st.rerun()
 
         elif save_or_discard == "Save":
             plant_nickname = st.text_input("Give this plant a name to save:", key="nickname")
