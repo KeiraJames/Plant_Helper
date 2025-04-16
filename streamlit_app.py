@@ -26,7 +26,7 @@ if sidebar_tab == "📤 Upload & Save":
         if uploaded_file and photo_name:
             st.session_state.temp_photo = uploaded_file
             st.session_state.temp_photo_name = photo_name
-            st.experimental_rerun()  # refresh to enter the preview section
+            st.rerun()  # refresh to enter the preview section
 
     # Preview and options
     elif st.session_state.temp_photo:
@@ -43,21 +43,21 @@ if sidebar_tab == "📤 Upload & Save":
                 # Clear temporary state
                 st.session_state.temp_photo = None
                 st.session_state.temp_photo_name = ""
-                st.success(f"Saved as '{photo_name}' 🎉")
-                st.experimental_rerun()
+                st.success("Photo saved! ✅")
+                st.rerun()
 
         with col2:
             if st.button("❌ Discard Photo"):
                 st.session_state.temp_photo = None
                 st.session_state.temp_photo_name = ""
-                st.warning("Photo discarded. Upload a new one.")
-                st.experimental_rerun()
+                st.warning("Photo discarded. You can upload another.")
+                st.rerun()
 
 # ===== Tab 2: View Saved Photos =====
 elif sidebar_tab == "🖼️ View Saved Photos":
-    st.title("Your Saved Photos")
+    st.title("🖼️ Your Saved Photos")
 
-    st.sidebar.header("🖼️ Saved Photos")
+    st.sidebar.header("Saved Photos")
     selected_photo = st.sidebar.selectbox("Select a saved photo to view:", options=[""] + list(st.session_state.saved_photos.keys()))
 
     if selected_photo:
