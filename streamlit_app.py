@@ -1,162 +1,175 @@
 import streamlit as st
+import base64
 import json
-import os
 import requests
 from io import BytesIO
-from PIL import Image
 
-# ---------- PlantNet API ----------
-class PlantNetAPI:
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
+# ===== API Setup =====
+API_KEY = "2b10X3YLMd8PNAuKOCVPt7MeUe"
+PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
 
-    def identify_plant(self, image_path):
-        with open(image_path, 'rb') as f:
-            files = {'images': f}
-            params = {'api-key': self.api_key}
-            response = requests.post(self.PLANTNET_URL, files=files, params=params)
-
-        if response.status_code == 200:
-            data = response.json()
-            if "results" in data and data["results"]:
-                plant_name = data["results"][0]["species"]["scientificNameWithoutAuthor"]
-                return plant_name
-            else:
-                return "No plant match found."
+def identify_plant(image_bytes):
+    files = {'images': ('image.jpg', image_bytes)}
+    params = {'api-key': API_KEY}
+    response = requests.post(PLANTNET_URL, files=files, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if "results" in data and data["results"]:
+            return data["results"][0]["species"]["scientificNameWithoutAuthor"]
         else:
-            return f"Error: {response.status_code}"
+            return None
+    else:
+        return None
 
-# ---------- Load Care Info ----------
-def load_care_info(plant_name):
-    with open("plants_with_personality3_copy.json", "r") as f:
-        plant_data = json.load(f)
-    for plant in plant_data:
+def get_care_info(plant_name, care_data):
+    for plant in care_data:
         if plant["Plant Name"].lower() == plant_name.lower():
             return plant
     return None
 
-# ---------- Initialize Session State ----------
+# ===== Load Plant Care JSON =====
+with open("plants_with_personality3_copy.json", "r") as f:
+    care_data = json.load(f)
+
+# ===== Streamlit Setup =====
+st.set_page_config(page_title="Plant Buddy", layout="wide")
+
+# ===== Session State Setup =====
 if "saved_photos" not in st.session_state:
-    st.session_state.saved_photos = {}
+    st.session_state.saved_photos = {}  # {name: {"image": url, "info": ..., "chat": ...}}
+if "temp_photo" not in st.session_state:
+    st.session_state.temp_photo = None
+if "saving_mode" not in st.session_state:
+    st.session_state.saving_mode = False
+if "temp_plant_name" not in st.session_state:
+    st.session_state.temp_plant_name = ""
+if "temp_care_info" not in st.session_state:
+    st.session_state.temp_care_info = None
+if "chat_log" not in st.session_state:
+    st.session_state.chat_log = []
 
-if "current_chat" not in st.session_state:
-    st.session_state.current_chat = []
+# ===== Sidebar Navigation =====
+tab = st.sidebar.radio("📚 Navigation", ["📤 Upload & Identify", "🪴 View Saved Plants"])
 
-if "uploaded_image" not in st.session_state:
-    st.session_state.uploaded_image = None
+# ===== Upload & Identify Tab =====
+if tab == "📤 Upload & Identify":
+    st.title("📤 Upload a Plant Photo")
 
-if "plant_name" not in st.session_state:
-    st.session_state.plant_name = None
+    if st.session_state.temp_photo is None:
+        uploaded_file = st.file_uploader("Upload a plant photo", type=["png", "jpg", "jpeg"])
+        if uploaded_file:
+            st.session_state.temp_photo = uploaded_file
+            st.session_state.chat_log = []
+            st.rerun()
 
-if "care_info" not in st.session_state:
-    st.session_state.care_info = None
+    elif st.session_state.temp_photo and not st.session_state.saving_mode:
+        image_bytes = st.session_state.temp_photo.getvalue()
+        st.image(image_bytes, caption="Uploaded Plant", use_container_width=True)
 
-# ---------- Sidebar Navigation ----------
-page = st.sidebar.radio("Navigation", ["Upload & Identify", "View Saved Photos"])
+        with st.spinner("Identifying plant..."):
+            plant_name = identify_plant(image_bytes)
 
-# ---------- Page 1: Upload and Identify ----------
-if page == "Upload & Identify":
-    st.header("Upload a Plant Photo")
-    uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+        if plant_name:
+            st.session_state.temp_plant_name = plant_name
+            care_info = get_care_info(plant_name, care_data)
+            st.session_state.temp_care_info = care_info
 
-    if uploaded_file:
-        # Store the uploaded image in session state
-        st.session_state.uploaded_image = uploaded_file.getvalue()
+            st.subheader(f"🌿 Plant Identified: {plant_name}")
+            if care_info:
+                st.markdown(f"**Light:** {care_info['Light Requirements']}")
+                st.markdown(f"**Watering:** {care_info['Watering']}")
+                st.markdown(f"**Humidity:** {care_info['Humidity Preferences']}")
+                st.markdown(f"**Temperature:** {care_info['Temperature Range']}")
+                st.markdown(f"**Feeding:** {care_info['Feeding Schedule']}")
+                st.markdown(f"**Toxicity:** {care_info['Toxicity']}")
+                st.markdown(f"**Additional Care:** {care_info['Additional Care']}")
+                st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
+                st.markdown(f"*{care_info['Personality']['Prompt']}*")
+            else:
+                st.warning("No care info found for this plant.")
 
-        st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
+            st.divider()
+            st.subheader("🧠 Chat with your plant:")
+            prompt = st.text_input("Say something to your plant:")
+            if prompt:
+                plant_response = f"{st.session_state.temp_plant_name} says: 🌱 I'm listening! You said: '{prompt}'"
+                st.session_state.chat_log.append(("You", prompt))
+                st.session_state.chat_log.append((st.session_state.temp_plant_name, plant_response))
 
-        # Process identification and display care info
-        temp_path = os.path.join("temp_image.jpg")
-        with open(temp_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
+            for speaker, msg in st.session_state.chat_log:
+                st.markdown(f"**{speaker}:** {msg}")
 
-        api = PlantNetAPI(api_key="2b10X3YLMd8PNAuKOCVPt7MeUe")
-        plant_name = api.identify_plant(temp_path)
-        st.session_state.plant_name = plant_name
-        st.subheader(f"Identified Plant: {plant_name}")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("💾 Save"):
+                    st.session_state.saving_mode = True
+                    st.rerun()
+            with col2:
+                if st.button("🗑️ Discard"):
+                    st.session_state.temp_photo = None
+                    st.session_state.temp_plant_name = ""
+                    st.session_state.temp_care_info = None
+                    st.session_state.chat_log = []
+                    st.success("Photo discarded. Upload another plant.")
+                    st.rerun()
 
-        care_info = load_care_info(plant_name)
-        st.session_state.care_info = care_info
-
-        if care_info:
-            st.markdown("### 🌿 Plant Care Info")
-            for k, v in care_info.items():
-                if k != "Personality":
-                    st.markdown(f"**{k}:** {v}")
-            if "Personality" in care_info:
-                st.markdown(f"### 🧠 Personality: {care_info['Personality']['Title']}")
-                st.markdown("**Traits:** " + ", ".join(care_info["Personality"]["Traits"]))
-                st.markdown("> " + care_info["Personality"]["Prompt"])
         else:
-            st.warning("No care info found for this plant.")
+            st.error("❌ Could not identify the plant. Try another photo.")
+            st.session_state.temp_photo = None
 
-        # Chatbot
-        st.markdown("### 💬 Talk to your plant!")
-        user_input = st.text_input("You:", key="chat_input")
-        if user_input:
-            response = f"I'm just a plant 🌱, but I hear you: '{user_input}'"
-            st.session_state.current_chat.append(("You", user_input))
-            st.session_state.current_chat.append(("Plant", response))
+    elif st.session_state.saving_mode:
+        st.image(st.session_state.temp_photo, caption="Confirm Save", use_container_width=True)
+        name_input = st.text_input("Enter a name to save this plant")
 
-        for sender, msg in st.session_state.current_chat:
-            st.markdown(f"**{sender}:** {msg}")
+        if name_input and st.button("✅ Confirm Save"):
+            encoded = base64.b64encode(st.session_state.temp_photo.getvalue()).decode()
+            mime_type = st.session_state.temp_photo.type
+            data_url = f"data:{mime_type};base64,{encoded}"
 
-        # Save or Discard buttons
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            if st.button("Save"):
-                plant_nickname = st.text_input("Give this plant a name to save:", key="nickname")
-                if plant_nickname:
-                    st.session_state.saved_photos[plant_nickname] = {
-                        "image_bytes": st.session_state.uploaded_image,
-                        "plant_name": plant_name,
-                        "care_info": care_info,
-                        "chat": st.session_state.current_chat.copy()
-                    }
-                    # Clear session state after saving
-                    st.session_state.uploaded_image = None
-                    st.session_state.plant_name = None
-                    st.session_state.care_info = None
-                    st.session_state.current_chat = []  # Clear chat history
-                    st.success("Saved!")
-                else:
-                    st.error("Please enter a name to save.")
-        
-        with col2:
-            if st.button("Discard"):
-                # Clear only the current session state related to the upload
-                st.session_state.uploaded_image = None
-                st.session_state.plant_name = None
-                st.session_state.care_info = None
-                st.session_state.current_chat = []  # Clear chat history
-                st.experimental_rerun()  # Refresh to upload a new photo
+            st.session_state.saved_photos[name_input] = {
+                "image": data_url,
+                "plant_name": st.session_state.temp_plant_name,
+                "care_info": st.session_state.temp_care_info,
+                "chat_log": st.session_state.chat_log
+            }
 
-# ---------- Page 2: View Saved ----------
-elif page == "View Saved Photos":
-    st.header("📁 Saved Plant Entries")
+            # Clear temp states
+            st.session_state.temp_photo = None
+            st.session_state.temp_plant_name = ""
+            st.session_state.temp_care_info = None
+            st.session_state.chat_log = []
+            st.session_state.saving_mode = False
 
-    if not st.session_state.saved_photos:
-        st.info("No saved photos yet.")
-    else:
-        selected = st.selectbox("Select a saved photo:", list(st.session_state.saved_photos.keys()))
-        if selected:
-            entry = st.session_state.saved_photos[selected]
-            image = Image.open(BytesIO(entry["image_bytes"]))
-            st.image(image, caption=f"Saved Photo: {selected}", use_container_width=True)
-            st.subheader(f"Identified Plant: {entry['plant_name']}")
+            st.success(f"🌟 Saved as '{name_input}'!")
+            st.rerun()
 
-            st.markdown("### 🌿 Plant Care Info")
-            for k, v in entry["care_info"].items():
-                if k != "Personality":
-                    st.markdown(f"**{k}:** {v}")
-            if "Personality" in entry["care_info"]:
-                p = entry["care_info"]["Personality"]
-                st.markdown(f"### 🧠 Personality: {p['Title']}")
-                st.markdown("**Traits:** " + ", ".join(p["Traits"]))
-                st.markdown("> " + p["Prompt"])
+# ===== View Saved Plants Tab =====
+elif tab == "🪴 View Saved Plants":
+    st.title("🪴 Your Saved Plants")
 
-            st.markdown("### 💬 Chat History")
-            for sender, msg in entry["chat"]:
-                st.markdown(f"**{sender}:** {msg}")
+    options = list(st.session_state.saved_photos.keys())
+    selected = st.sidebar.selectbox("Choose a saved plant:", [""] + options)
+
+    if selected:
+        entry = st.session_state.saved_photos[selected]
+        st.subheader(f"📸 {selected}")
+        st.image(entry["image"], use_container_width=True)
+
+        if "plant_name" in entry:
+            st.markdown(f"**Plant Identified:** {entry['plant_name']}")
+        if "care_info" in entry and entry["care_info"]:
+            care = entry["care_info"]
+            st.markdown(f"**Light:** {care['Light Requirements']}")
+            st.markdown(f"**Watering:** {care['Watering']}")
+            st.markdown(f"**Humidity:** {care['Humidity Preferences']}")
+            st.markdown(f"**Temperature:** {care['Temperature Range']}")
+            st.markdown(f"**Feeding:** {care['Feeding Schedule']}")
+            st.markdown(f"**Toxicity:** {care['Toxicity']}")
+            st.markdown(f"**Additional Care:** {care['Additional Care']}")
+            st.markdown(f"**Personality:** *{care['Personality']['Title']}* - {', '.join(care['Personality']['Traits'])}")
+            st.markdown(f"*{care['Personality']['Prompt']}*")
+
+        if "chat_log" in entry:
+            st.subheader("🧠 Chat History")
+            for speaker, msg in entry["chat_log"]:
+                st.markdown(f"**{speaker}:** {msg}")
