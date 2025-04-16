@@ -115,12 +115,18 @@ if page == "Upload & Identify":
                         "care_info": care_info,
                         "chat": st.session_state.current_chat.copy()
                     }
+                    # Clear session state after saving
+                    st.session_state.uploaded_image = None
+                    st.session_state.plant_name = None
+                    st.session_state.care_info = None
+                    st.session_state.current_chat = []  # Clear chat history
                     st.success("Saved!")
                 else:
                     st.error("Please enter a name to save.")
         
         with col2:
             if st.button("Discard"):
+                # Clear only the current session state related to the upload
                 st.session_state.uploaded_image = None
                 st.session_state.plant_name = None
                 st.session_state.care_info = None
