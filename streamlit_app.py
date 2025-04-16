@@ -53,47 +53,51 @@ if page == "Upload & Identify":
 
     if uploaded_file:
         st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
+
+        # Process identification and display care info
+        temp_path = os.path.join("temp_image.jpg")
+        with open(temp_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        api = PlantNetAPI(api_key="2b10X3YLMd8PNAuKOCVPt7MeUe")
+        plant_name = api.identify_plant(temp_path)
+        st.subheader(f"Identified Plant: {plant_name}")
+
+        care_info = load_care_info(plant_name)
+        if care_info:
+            st.markdown("### 🌿 Plant Care Info")
+            for k, v in care_info.items():
+                if k != "Personality":
+                    st.markdown(f"**{k}:** {v}")
+            if "Personality" in care_info:
+                st.markdown(f"### 🧠 Personality: {care_info['Personality']['Title']}")
+                st.markdown("**Traits:** " + ", ".join(care_info["Personality"]["Traits"]))
+                st.markdown("> " + care_info["Personality"]["Prompt"])
+        else:
+            st.warning("No care info found for this plant.")
+
+        # Chatbot
+        st.markdown("### 💬 Talk to your plant!")
+        user_input = st.text_input("You:", key="chat_input")
+        if user_input:
+            response = f"I'm just a plant 🌱, but I hear you: '{user_input}'"
+            st.session_state.current_chat.append(("You", user_input))
+            st.session_state.current_chat.append(("Plant", response))
+
+        for sender, msg in st.session_state.current_chat:
+            st.markdown(f"**{sender}:** {msg}")
+
+        # Save or Discard options
         save_or_discard = st.radio("Do you want to save or discard this?", ["Choose...", "Save", "Discard"])
 
         if save_or_discard == "Discard":
             st.warning("Upload a new photo to try again.")
+            # Clear the state and rerun to upload again
+            st.session_state.current_chat = []  # Clear chat history
             st.experimental_rerun()
 
         elif save_or_discard == "Save":
-            temp_path = os.path.join("temp_image.jpg")
-            with open(temp_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-
-            api = PlantNetAPI(api_key="2b10X3YLMd8PNAuKOCVPt7MeUe")
-            plant_name = api.identify_plant(temp_path)
-            st.subheader(f"Identified Plant: {plant_name}")
-
-            care_info = load_care_info(plant_name)
-            if care_info:
-                st.markdown("### 🌿 Plant Care Info")
-                for k, v in care_info.items():
-                    if k != "Personality":
-                        st.markdown(f"**{k}:** {v}")
-                if "Personality" in care_info:
-                    st.markdown(f"### 🧠 Personality: {care_info['Personality']['Title']}")
-                    st.markdown("**Traits:** " + ", ".join(care_info["Personality"]["Traits"]))
-                    st.markdown("> " + care_info["Personality"]["Prompt"])
-            else:
-                st.warning("No care info found for this plant.")
-
-            # Chatbot
-            st.markdown("### 💬 Talk to your plant!")
-            user_input = st.text_input("You:", key="chat_input")
-            if user_input:
-                response = f"I'm just a plant 🌱, but I hear you: '{user_input}'"
-                st.session_state.current_chat.append(("You", user_input))
-                st.session_state.current_chat.append(("Plant", response))
-
-            for sender, msg in st.session_state.current_chat:
-                st.markdown(f"**{sender}:** {msg}")
-
-            # Save section
-            plant_nickname = st.text_input("Give this plant a name to save it:", key="nickname")
+            plant_nickname = st.text_input("Give this plant a name to save:", key="nickname")
             if st.button("Save Plant Entry"):
                 if plant_nickname:
                     st.session_state.saved_photos[plant_nickname] = {
