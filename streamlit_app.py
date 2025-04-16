@@ -29,7 +29,7 @@ class PlantNetAPI:
 
 # ---------- Load Care Info ----------
 def load_care_info(plant_name):
-    with open("plant_data.json", "r") as f:
+    with open("plants_with_personality3_copy.json", "r") as f:
         plant_data = json.load(f)
     for plant in plant_data:
         if plant["Plant Name"].lower() == plant_name.lower():
