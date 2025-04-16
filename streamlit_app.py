@@ -87,18 +87,12 @@ if page == "Upload & Identify":
         for sender, msg in st.session_state.current_chat:
             st.markdown(f"**{sender}:** {msg}")
 
-        # Save or Discard options (without the "Choose..." option)
-        save_or_discard = st.radio("Do you want to save or discard this?", ["Save", "Discard"])
-
-        if save_or_discard == "Discard":
-            st.warning("Upload a new photo to try again.")
-            # Clear the state and rerun to upload again
-            st.session_state.current_chat = []  # Clear chat history
-            st.rerun()
-
-        elif save_or_discard == "Save":
-            plant_nickname = st.text_input("Give this plant a name to save:", key="nickname")
-            if st.button("Save Plant Entry"):
+        # Save or Discard buttons
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            if st.button("Save"):
+                plant_nickname = st.text_input("Give this plant a name to save:", key="nickname")
                 if plant_nickname:
                     st.session_state.saved_photos[plant_nickname] = {
                         "image_bytes": uploaded_file.getvalue(),
@@ -109,6 +103,11 @@ if page == "Upload & Identify":
                     st.success("Saved!")
                 else:
                     st.error("Please enter a name to save.")
+        
+        with col2:
+            if st.button("Discard"):
+                st.session_state.current_chat = []  # Clear chat history
+                st.rerun()  # Refresh to upload a new photo
 
 # ---------- Page 2: View Saved ----------
 elif page == "View Saved Photos":
