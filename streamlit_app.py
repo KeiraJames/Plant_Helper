@@ -3,47 +3,63 @@ import base64
 
 st.set_page_config(page_title="Photo Uploader", layout="wide")
 
-# Store photos in memory
+# Initialize session state
 if "saved_photos" not in st.session_state:
     st.session_state.saved_photos = {}
+if "temp_photo" not in st.session_state:
+    st.session_state.temp_photo = None
+if "temp_photo_name" not in st.session_state:
+    st.session_state.temp_photo_name = ""
 
-# Sidebar with two tabs
+# Sidebar Tabs
 sidebar_tab = st.sidebar.radio("Choose a tab", ["📤 Upload & Save", "🖼️ View Saved Photos"])
 
-# ===== Tab 1: Upload & Save Photo =====
+# ===== Tab 1: Upload & Save =====
 if sidebar_tab == "📤 Upload & Save":
     st.title("📸 Upload and Save Your Photo")
 
-    uploaded_file = st.file_uploader("Choose a photo...", type=["png", "jpg", "jpeg"])
-    photo_name = st.text_input("Name your photo before saving:")
+    # Upload form
+    if st.session_state.temp_photo is None:
+        uploaded_file = st.file_uploader("Choose a photo...", type=["png", "jpg", "jpeg"], key="uploader")
+        photo_name = st.text_input("Name your photo before saving:")
 
-    if uploaded_file:
-        st.image(uploaded_file, caption="Preview", use_container_width=True)
+        if uploaded_file and photo_name:
+            st.session_state.temp_photo = uploaded_file
+            st.session_state.temp_photo_name = photo_name
+            st.experimental_rerun()  # refresh to enter the preview section
 
-    # Save button
-    if uploaded_file and photo_name:
-        if st.button("✅ Save Photo"):
-            # Encode the image file into base64
-            encoded = base64.b64encode(uploaded_file.getvalue()).decode()
-            mime_type = uploaded_file.type
-            data_url = f"data:{mime_type};base64,{encoded}"
-            
-            # Store the image in session state with the name as key
-            st.session_state.saved_photos[photo_name] = data_url
-            st.success(f"Saved as '{photo_name}' 🎉")
+    # Preview and options
+    elif st.session_state.temp_photo:
+        st.image(st.session_state.temp_photo, caption="Preview", use_container_width=True)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ Save Photo"):
+                encoded = base64.b64encode(st.session_state.temp_photo.getvalue()).decode()
+                mime_type = st.session_state.temp_photo.type
+                data_url = f"data:{mime_type};base64,{encoded}"
+                st.session_state.saved_photos[st.session_state.temp_photo_name] = data_url
+
+                # Clear temporary state
+                st.session_state.temp_photo = None
+                st.session_state.temp_photo_name = ""
+                st.success(f"Saved as '{photo_name}' 🎉")
+                st.experimental_rerun()
+
+        with col2:
+            if st.button("❌ Discard Photo"):
+                st.session_state.temp_photo = None
+                st.session_state.temp_photo_name = ""
+                st.warning("Photo discarded. Upload a new one.")
+                st.experimental_rerun()
 
 # ===== Tab 2: View Saved Photos =====
 elif sidebar_tab == "🖼️ View Saved Photos":
     st.title("Your Saved Photos")
 
-    # Sidebar: List saved photos
     st.sidebar.header("🖼️ Saved Photos")
     selected_photo = st.sidebar.selectbox("Select a saved photo to view:", options=[""] + list(st.session_state.saved_photos.keys()))
 
-    # If a saved photo is selected, display it in the main section
     if selected_photo:
         st.subheader(f"📸 Viewing: {selected_photo}")
-        
-        # Display the image based on the saved data URL
-        image_data = st.session_state.saved_photos[selected_photo]
-        st.image(image_data, caption=selected_photo, use_container_width=True)
+        st.image(st.session_state.saved_photos[selected_photo], caption=selected_photo, use_container_width=True)
