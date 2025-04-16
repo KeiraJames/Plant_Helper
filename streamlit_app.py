@@ -23,9 +23,12 @@ if sidebar_tab == "📤 Upload & Save":
     # Save button
     if uploaded_file and photo_name:
         if st.button("✅ Save Photo"):
+            # Encode the image file into base64
             encoded = base64.b64encode(uploaded_file.getvalue()).decode()
             mime_type = uploaded_file.type
             data_url = f"data:{mime_type};base64,{encoded}"
+            
+            # Store the image in session state with the name as key
             st.session_state.saved_photos[photo_name] = data_url
             st.success(f"Saved as '{photo_name}' 🎉")
 
@@ -38,3 +41,9 @@ elif sidebar_tab == "🖼️ View Saved Photos":
     selected_photo = st.sidebar.selectbox("Select a saved photo to view:", options=[""] + list(st.session_state.saved_photos.keys()))
 
     # If a saved photo is selected, display it in the main section
+    if selected_photo:
+        st.subheader(f"📸 Viewing: {selected_photo}")
+        
+        # Display the image based on the saved data URL
+        image_data = st.session_state.saved_photos[selected_photo]
+        st.image(image_data, caption=selected_photo, use_container_width=True)
