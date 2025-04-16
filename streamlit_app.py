@@ -8,6 +8,8 @@ if "saved_photos" not in st.session_state:
     st.session_state.saved_photos = {}
 if "temp_photo" not in st.session_state:
     st.session_state.temp_photo = None
+if "saving_mode" not in st.session_state:
+    st.session_state.saving_mode = False
 if "temp_photo_name" not in st.session_state:
     st.session_state.temp_photo_name = ""
 
@@ -18,39 +20,51 @@ sidebar_tab = st.sidebar.radio("Choose a tab", ["📤 Upload & Save", "🖼️ V
 if sidebar_tab == "📤 Upload & Save":
     st.title("📸 Upload and Save Your Photo")
 
-    # Upload form
+    # If no photo uploaded yet
     if st.session_state.temp_photo is None:
         uploaded_file = st.file_uploader("Choose a photo...", type=["png", "jpg", "jpeg"], key="uploader")
-        photo_name = st.text_input("Name your photo before saving:")
-
-        if uploaded_file and photo_name:
+        if uploaded_file:
             st.session_state.temp_photo = uploaded_file
-            st.session_state.temp_photo_name = photo_name
-            st.rerun()  # refresh to enter the preview section
+            st.session_state.saving_mode = False
+            st.rerun()
 
-    # Preview and options
-    elif st.session_state.temp_photo:
+    # If photo is uploaded but not in naming mode
+    elif st.session_state.temp_photo and not st.session_state.saving_mode:
         st.image(st.session_state.temp_photo, caption="Preview", use_container_width=True)
-
+        st.write("Do you want to save this photo or discard it?")
         col1, col2 = st.columns(2)
-        with col1:
-            if st.button("✅ Save Photo"):
-                encoded = base64.b64encode(st.session_state.temp_photo.getvalue()).decode()
-                mime_type = st.session_state.temp_photo.type
-                data_url = f"data:{mime_type};base64,{encoded}"
-                st.session_state.saved_photos[st.session_state.temp_photo_name] = data_url
 
-                # Clear temporary state
-                st.session_state.temp_photo = None
-                st.session_state.temp_photo_name = ""
-                st.success("Photo saved! ✅")
+        with col1:
+            if st.button("✅ Save"):
+                st.session_state.saving_mode = True
                 st.rerun()
 
         with col2:
-            if st.button("❌ Discard Photo"):
+            if st.button("❌ Discard"):
                 st.session_state.temp_photo = None
                 st.session_state.temp_photo_name = ""
-                st.warning("Photo discarded. You can upload another.")
+                st.session_state.saving_mode = False
+                st.warning("Photo discarded.")
+                st.rerun()
+
+    # If Save was chosen → prompt for name
+    elif st.session_state.temp_photo and st.session_state.saving_mode:
+        st.image(st.session_state.temp_photo, caption="Preview", use_container_width=True)
+        st.subheader("Name your photo before saving:")
+        name_input = st.text_input("Photo Name")
+
+        if name_input:
+            if st.button("💾 Confirm Save"):
+                encoded = base64.b64encode(st.session_state.temp_photo.getvalue()).decode()
+                mime_type = st.session_state.temp_photo.type
+                data_url = f"data:{mime_type};base64,{encoded}"
+                st.session_state.saved_photos[name_input] = data_url
+
+                # Reset temp state
+                st.session_state.temp_photo = None
+                st.session_state.temp_photo_name = ""
+                st.session_state.saving_mode = False
+                st.success(f"Photo saved as '{name_input}'!")
                 st.rerun()
 
 # ===== Tab 2: View Saved Photos =====
