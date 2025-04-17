@@ -34,7 +34,7 @@ def chat_with_gemini(messages):
     headers = {
         "Content-Type": "application/json"
     }
-    response = requests.post(GEMINI_URL, headers=headers, json=payload)
+   response = requests.post(API_URL, json=payload, headers=headers)
     if response.status_code == 200:
         data = response.json()
         return data['candidates'][0]['content']['parts'][0]['text']
