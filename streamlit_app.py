@@ -69,12 +69,14 @@ def chat_with_plant(care_info, user_input):
                 "text": f"You are a plant with a personality called {personality['title']}. "
                         f"Your traits include {personality['traits']}. {personality['prompt']}"
             }]
-        },
-        {
-            "role": "user",  # User's message
-            "parts": [{"text": user_input}]
         }
     ]
+
+        # User message
+        messages.append({
+                "role": "user",
+                "parts": [{"text": user_input}]
+        })
 
     # Send the messages to Gemini API and get the response
     response = send_message(messages)
