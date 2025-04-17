@@ -110,8 +110,12 @@ if tab == "📤 Upload & Identify":
             if prompt:
                 personality = care_info['Personality']['Prompt']
                 messages = [
-                    {"role": "user", "parts": [{"text": f"You are a plant with the personality: '{personality}'. Respond to the user casually based on this personality."}]},
-                    {"role": "user", "parts": [{"text": prompt}]}
+                    messages = [
+                            {"role": "user", "parts": [{"text": f"You are a plant with the personality: '{personality}'."}]},
+                            {"role": "model", "parts": [{"text": "Okay, I will respond like that!"}]},  # Optional primer
+                            {"role": "user", "parts": [{"text": prompt}]}
+                ]
+
                 ]
                 response = chat_with_gemini(messages)
                 st.session_state.chat_log.append(("You", prompt))
