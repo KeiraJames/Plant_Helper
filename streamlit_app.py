@@ -83,6 +83,7 @@ if tab == "📤 Upload & Identify":
 
         with st.spinner("Identifying plant..."):
             plant_name = identify_plant(image_bytes)
+        #-------------------------------------------------------------------------------
 
         if plant_name:
             st.session_state.temp_plant_name = plant_name
@@ -104,15 +105,18 @@ if tab == "📤 Upload & Identify":
                 st.warning("No care info found for this plant.")
 
             st.divider()
+
+            # -----------------------------------------------------------------------------
             st.subheader("🧠 Chat with your plant:")
             prompt = st.text_input("Say something to your plant:")
 
             if prompt:
                 personality = care_info['Personality']['Prompt']
                 messages = [
-                            {"role": "user", "parts": [{"text": f"You are a plant with the personality: '{personality}'."}]},
-                            {"role": "model", "parts": [{"text": "Okay, I will respond like that!"}]},  # Optional primer
-                            {"role": "user", "parts": [{"text": prompt}]}
+                {
+                    "role": "user",
+                    "parts": [{"text": f"You are {personality['title']} and {personality['traits']}. {personality['prompt']}"}]
+                }
                 ]
 
                 response = chat_with_gemini(messages)
