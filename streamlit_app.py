@@ -70,10 +70,10 @@ def chat_with_plant(care_info, user_input):
                         f"Your traits include {personality['traits']}. {personality['prompt']}"
             }]
         }
-    ]
+        ]
 
         # User message
-        messages.append({
+    messages.append({
                 "role": "user",
                 "parts": [{"text": user_input}]
         })
