@@ -169,4 +169,12 @@ elif tab == "🪴 View Saved Plants":
             st.markdown(f"**Humidity:** {care['Humidity Preferences']}")
             st.markdown(f"**Temperature:** {care['Temperature Range']}")
             st.markdown(f"**Feeding:** {care['Feeding Schedule']}")
-            st.markdown(f"**Toxic**
+            st.markdown(f"**Toxicity:** {care['Toxicity']}")
+            st.markdown(f"**Additional Care:** {care['Additional Care']}")
+            st.markdown(f"**Personality:** *{care['Personality']['Title']}* - {', '.join(care['Personality']['Traits'])}")
+            st.markdown(f"*{care['Personality']['Prompt']}*")
+
+        if "chat_log" in entry:
+            st.subheader("🧠 Chat History")
+            for speaker, msg in entry["chat_log"]:
+                st.markdown(f"**{speaker}:** {msg}")
