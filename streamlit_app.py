@@ -57,6 +57,29 @@ def send_message(messages):
         print("Error:", response.status_code, response.text)
         return "Something went wrong."
 
+def chat_with_plant(care_info, user_input):
+    # Get personality information from plant care data
+    personality = create_personality_profile(care_info)
+
+    # Messages include plant personality + prompt to guide the conversation
+    messages = [
+        {
+            "role": "system",  # This tells Gemini the plant personality
+            "parts": [{
+                "text": f"You are a plant with a personality called {personality['title']}. "
+                        f"Your traits include {personality['traits']}. {personality['prompt']}"
+            }]
+        },
+        {
+            "role": "user",  # User's message
+            "parts": [{"text": user_input}]
+        }
+    ]
+
+    # Send the messages to Gemini API and get the response
+    response = send_message(messages)
+    return response
+
 # ===== Load Plant Care JSON =====
 with open("plants_with_personality3_copy.json", "r") as f:
     care_data = json.load(f)
@@ -113,8 +136,6 @@ if tab == "📤 Upload & Identify":
                 st.markdown(f"**Feeding:** {care_info['Feeding Schedule']}")
                 st.markdown(f"**Toxicity:** {care_info['Toxicity']}")
                 st.markdown(f"**Additional Care:** {care_info['Additional Care']}")
-                #st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
-                #st.markdown(f"*{care_info['Personality']['Prompt']}*")
             else:
                 st.warning("No care info found for this plant.")
 
