@@ -152,27 +152,6 @@ if tab == "📤 Upload & Identify":
                 st.session_state.chat_log.append(("You", prompt))
                 st.session_state.chat_log.append((st.session_state.temp_plant_name, plant_response))
 
-                '''
-                # Add personality info to the messages
-                personality = create_personality_profile(care_info)
-                messages = [
-                    {
-                        "role": "user",
-                        "parts": [{"text": f"You are {personality['title']} and {personality['traits']}. {personality['prompt']}"}]
-                    }
-                ]
-                
-                # Add user message
-                messages.append({
-                    "role": "user",
-                    "parts": [{"text": prompt}]
-                })
-
-                # Send message to Gemini API
-                response = send_message(messages)
-                st.session_state.chat_log.append((st.session_state.temp_plant_name, response))
-                '''
-
             for speaker, msg in st.session_state.chat_log:
                 st.markdown(f"**{speaker}:** {msg}")
 
