@@ -5,21 +5,21 @@ import requests
 from io import BytesIO
 
 # ===== API Setup =====
-API_KEY = "2b10X3YLMd8PNAuKOCVPt7MeUe"
+PLANTNET_API_KEY = "2b10X3YLMd8PNAuKOCVPt7MeUe"
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
 PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent?key={GEMINI_API_KEY}"
 
+# ===== Functions =====
 def identify_plant(image_bytes):
     files = {'images': ('image.jpg', image_bytes)}
-    params = {'api-key': API_KEY}
+    params = {'api-key': PLANTNET_API_KEY}
     response = requests.post(PLANTNET_URL, files=files, params=params)
     if response.status_code == 200:
         data = response.json()
         if "results" in data and data["results"]:
             return data["results"][0]["species"]["scientificNameWithoutAuthor"]
-        else:
-            return None
-    else:
-        return None
+    return None
 
 def get_care_info(plant_name, care_data):
     for plant in care_data:
@@ -27,7 +27,21 @@ def get_care_info(plant_name, care_data):
             return plant
     return None
 
-# ===== Load Plant Care JSON =====
+def chat_with_gemini(messages):
+    payload = {
+        "contents": messages
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+    response = requests.post(GEMINI_URL, headers=headers, json=payload)
+    if response.status_code == 200:
+        data = response.json()
+        return data['candidates'][0]['content']['parts'][0]['text']
+    else:
+        return "Something went wrong talking to your plant 🤖"
+
+# ===== Load JSON =====
 with open("plants_with_personality3_copy.json", "r") as f:
     care_data = json.load(f)
 
@@ -36,7 +50,7 @@ st.set_page_config(page_title="Plant Buddy", layout="wide")
 
 # ===== Session State Setup =====
 if "saved_photos" not in st.session_state:
-    st.session_state.saved_photos = {}  # {name: {"image": url, "info": ..., "chat": ...}}
+    st.session_state.saved_photos = {}
 if "temp_photo" not in st.session_state:
     st.session_state.temp_photo = None
 if "saving_mode" not in st.session_state:
@@ -51,7 +65,7 @@ if "chat_log" not in st.session_state:
 # ===== Sidebar Navigation =====
 tab = st.sidebar.radio("📚 Navigation", ["📤 Upload & Identify", "🪴 View Saved Plants"])
 
-# ===== Upload & Identify Tab =====
+# ===== Upload Tab =====
 if tab == "📤 Upload & Identify":
     st.title("📤 Upload a Plant Photo")
 
@@ -90,20 +104,21 @@ if tab == "📤 Upload & Identify":
 
             st.divider()
             st.subheader("🧠 Chat with your plant:")
-
-            # User input for chat
             prompt = st.text_input("Say something to your plant:")
-            if prompt:
-                # Generating a plant response
-                plant_response = f"{st.session_state.temp_plant_name} says: 🌱 I'm listening! You said: '{prompt}'"
-                st.session_state.chat_log.append(("You", prompt))
-                st.session_state.chat_log.append((st.session_state.temp_plant_name, plant_response))
 
-            # Display chat history
+            if prompt:
+                personality = care_info['Personality']['Prompt']
+                messages = [
+                    {"role": "user", "parts": [{"text": f"You are a plant with the personality: '{personality}'. Respond to the user casually based on this personality."}]},
+                    {"role": "user", "parts": [{"text": prompt}]}
+                ]
+                response = chat_with_gemini(messages)
+                st.session_state.chat_log.append(("You", prompt))
+                st.session_state.chat_log.append((plant_name, response))
+
             for speaker, msg in st.session_state.chat_log:
                 st.markdown(f"**{speaker}:** {msg}")
 
-            # Save or discard options
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("💾 Save"):
@@ -117,7 +132,6 @@ if tab == "📤 Upload & Identify":
                     st.session_state.chat_log = []
                     st.success("Photo discarded. Upload another plant.")
                     st.rerun()
-
         else:
             st.error("❌ Could not identify the plant. Try another photo.")
             st.session_state.temp_photo = None
@@ -138,7 +152,6 @@ if tab == "📤 Upload & Identify":
                 "chat_log": st.session_state.chat_log
             }
 
-            # Clear temp states
             st.session_state.temp_photo = None
             st.session_state.temp_plant_name = ""
             st.session_state.temp_care_info = None
@@ -148,7 +161,7 @@ if tab == "📤 Upload & Identify":
             st.success(f"🌟 Saved as '{name_input}'!")
             st.rerun()
 
-# ===== View Saved Plants Tab =====
+# ===== View Saved Plants =====
 elif tab == "🪴 View Saved Plants":
     st.title("🪴 Your Saved Plants")
 
