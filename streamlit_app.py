@@ -110,7 +110,6 @@ if tab == "📤 Upload & Identify":
             if prompt:
                 personality = care_info['Personality']['Prompt']
                 messages = [
-                    messages = [
                             {"role": "user", "parts": [{"text": f"You are a plant with the personality: '{personality}'."}]},
                             {"role": "model", "parts": [{"text": "Okay, I will respond like that!"}]},  # Optional primer
                             {"role": "user", "parts": [{"text": prompt}]}
