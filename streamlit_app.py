@@ -5,12 +5,11 @@ import requests
 from io import BytesIO
 
 # ===== API Setup =====
-PLANTNET_API_KEY = "2b10X3YLMd8PNAuKOCVPt7MeUe"
-GEMINI_API_KEY = "AIzaSyCD3HRndQD3ir_nhNMIZ-ss0EkAEK3DC0U"
+PLANTNET_API_KEY = '2b10X3YLMd8PNAuKOCVPt7MeUe'  
 PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent?key={GEMINI_API_KEY}"
+GEMINI_API_KEY = 'AIzaSyCD3HRndQD3ir_nhNMIZ-ss0EkAEK3DC0U'  
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
-# ===== Functions =====
 def identify_plant(image_bytes):
     files = {'images': ('image.jpg', image_bytes)}
     params = {'api-key': PLANTNET_API_KEY}
@@ -19,7 +18,10 @@ def identify_plant(image_bytes):
         data = response.json()
         if "results" in data and data["results"]:
             return data["results"][0]["species"]["scientificNameWithoutAuthor"]
-    return None
+        else:
+            return None
+    else:
+        return None
 
 def get_care_info(plant_name, care_data):
     for plant in care_data:
@@ -27,22 +29,35 @@ def get_care_info(plant_name, care_data):
             return plant
     return None
 
-def chat_with_gemini(messages):
+def create_personality_profile(plant):
+    title = plant["Personality"]["Title"]
+    traits = ", ".join(plant["Personality"]["Traits"])
+    prompt = plant["Personality"]["Prompt"]
+    return {
+        "title": title,
+        "traits": traits,
+        "prompt": prompt
+    }
+
+def send_message(messages):
     payload = {
-        "contents": messages
+        "contents": messages  # Gemini expects messages to be under the key "contents". We pass the conversation history here.
     }
+
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json"  # Sets the request headers so Gemini knows we’re sending JSON.
     }
-    response = requests.post(GEMINI_URL, json=payload, headers=headers)
+
+    response = requests.post(GEMINI_API_URL, json=payload, headers=headers)  # Sends a POST request with the payload and headers to the Gemini API.
+
     if response.status_code == 200:
         data = response.json()
         return data['candidates'][0]['content']['parts'][0]['text']
     else:
         print("Error:", response.status_code, response.text)
-        return "Something went wrong talking to your plant 🤖"
+        return "Something went wrong."
 
-# ===== Load JSON =====
+# ===== Load Plant Care JSON =====
 with open("plants_with_personality3_copy.json", "r") as f:
     care_data = json.load(f)
 
@@ -51,7 +66,7 @@ st.set_page_config(page_title="Plant Buddy", layout="wide")
 
 # ===== Session State Setup =====
 if "saved_photos" not in st.session_state:
-    st.session_state.saved_photos = {}
+    st.session_state.saved_photos = {}  # {name: {"image": url, "info": ..., "chat": ...}}
 if "temp_photo" not in st.session_state:
     st.session_state.temp_photo = None
 if "saving_mode" not in st.session_state:
@@ -66,7 +81,7 @@ if "chat_log" not in st.session_state:
 # ===== Sidebar Navigation =====
 tab = st.sidebar.radio("📚 Navigation", ["📤 Upload & Identify", "🪴 View Saved Plants"])
 
-# ===== Upload Tab =====
+# ===== Upload & Identify Tab =====
 if tab == "📤 Upload & Identify":
     st.title("📤 Upload a Plant Photo")
 
@@ -83,7 +98,6 @@ if tab == "📤 Upload & Identify":
 
         with st.spinner("Identifying plant..."):
             plant_name = identify_plant(image_bytes)
-        #-------------------------------------------------------------------------------
 
         if plant_name:
             st.session_state.temp_plant_name = plant_name
@@ -99,29 +113,36 @@ if tab == "📤 Upload & Identify":
                 st.markdown(f"**Feeding:** {care_info['Feeding Schedule']}")
                 st.markdown(f"**Toxicity:** {care_info['Toxicity']}")
                 st.markdown(f"**Additional Care:** {care_info['Additional Care']}")
-                #st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
-                #st.markdown(f"*{care_info['Personality']['Prompt']}*")
+                st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
+                st.markdown(f"*{care_info['Personality']['Prompt']}*")
             else:
                 st.warning("No care info found for this plant.")
 
             st.divider()
-
-            # -----------------------------------------------------------------------------
             st.subheader("🧠 Chat with your plant:")
             prompt = st.text_input("Say something to your plant:")
-
             if prompt:
-                personality = care_info['Personality']['Prompt']
-                messages = [
-                {
-                    "role": "user",
-                    "parts": [{"text": f"You are {personality} and {personality}. {personality}"}]
-                }
-                ]
-
-                response = chat_with_gemini(messages)
+                plant_response = f"{st.session_state.temp_plant_name} says: 🌱 I'm listening! You said: '{prompt}'"
                 st.session_state.chat_log.append(("You", prompt))
-                st.session_state.chat_log.append((plant_name, response))
+
+                # Add personality info to the messages
+                personality = create_personality_profile(care_info)
+                messages = [
+                    {
+                        "role": "user",
+                        "parts": [{"text": f"You are {personality['title']} and {personality['traits']}. {personality['prompt']}"}]
+                    }
+                ]
+                
+                # Add user message
+                messages.append({
+                    "role": "user",
+                    "parts": [{"text": prompt}]
+                })
+
+                # Send message to Gemini API
+                response = send_message(messages)
+                st.session_state.chat_log.append((st.session_state.temp_plant_name, response))
 
             for speaker, msg in st.session_state.chat_log:
                 st.markdown(f"**{speaker}:** {msg}")
@@ -139,6 +160,7 @@ if tab == "📤 Upload & Identify":
                     st.session_state.chat_log = []
                     st.success("Photo discarded. Upload another plant.")
                     st.rerun()
+
         else:
             st.error("❌ Could not identify the plant. Try another photo.")
             st.session_state.temp_photo = None
@@ -159,6 +181,7 @@ if tab == "📤 Upload & Identify":
                 "chat_log": st.session_state.chat_log
             }
 
+            # Clear temp states
             st.session_state.temp_photo = None
             st.session_state.temp_plant_name = ""
             st.session_state.temp_care_info = None
@@ -168,7 +191,7 @@ if tab == "📤 Upload & Identify":
             st.success(f"🌟 Saved as '{name_input}'!")
             st.rerun()
 
-# ===== View Saved Plants =====
+# ===== View Saved Plants Tab =====
 elif tab == "🪴 View Saved Plants":
     st.title("🪴 Your Saved Plants")
 
@@ -191,10 +214,3 @@ elif tab == "🪴 View Saved Plants":
             st.markdown(f"**Feeding:** {care['Feeding Schedule']}")
             st.markdown(f"**Toxicity:** {care['Toxicity']}")
             st.markdown(f"**Additional Care:** {care['Additional Care']}")
-            st.markdown(f"**Personality:** *{care['Personality']['Title']}* - {', '.join(care['Personality']['Traits'])}")
-            st.markdown(f"*{care['Personality']['Prompt']}*")
-
-        if "chat_log" in entry:
-            st.subheader("🧠 Chat History")
-            for speaker, msg in entry["chat_log"]:
-                st.markdown(f"**{speaker}:** {msg}")
