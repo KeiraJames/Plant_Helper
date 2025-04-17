@@ -115,7 +115,6 @@ if tab == "📤 Upload & Identify":
                             {"role": "user", "parts": [{"text": prompt}]}
                 ]
 
-                ]
                 response = chat_with_gemini(messages)
                 st.session_state.chat_log.append(("You", prompt))
                 st.session_state.chat_log.append((plant_name, response))
