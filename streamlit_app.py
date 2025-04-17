@@ -113,8 +113,8 @@ if tab == "📤 Upload & Identify":
                 st.markdown(f"**Feeding:** {care_info['Feeding Schedule']}")
                 st.markdown(f"**Toxicity:** {care_info['Toxicity']}")
                 st.markdown(f"**Additional Care:** {care_info['Additional Care']}")
-                st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
-                st.markdown(f"*{care_info['Personality']['Prompt']}*")
+                #st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
+                #st.markdown(f"*{care_info['Personality']['Prompt']}*")
             else:
                 st.warning("No care info found for this plant.")
 
