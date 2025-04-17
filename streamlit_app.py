@@ -58,10 +58,9 @@ def send_message(messages):
         return "Something went wrong."
 
 def chat_with_plant(care_info, user_input):
-    # Get personality information from plant care data
+    
     personality = create_personality_profile(care_info)
-
-    # Messages include plant personality + prompt to guide the conversation
+    
     messages = [
         {
             "role": "user",  # This tells Gemini the plant personality
@@ -71,14 +70,12 @@ def chat_with_plant(care_info, user_input):
             }]
         }
         ]
-
-        # User message
+     
     messages.append({
                 "role": "user",
                 "parts": [{"text": user_input}]
         })
-
-    # Send the messages to Gemini API and get the response
+    
     response = send_message(messages)
     return response
 
