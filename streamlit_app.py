@@ -76,7 +76,6 @@ if tab == "📤 Upload & Identify":
 
             st.subheader(f"🌿 Plant Identified: {plant_name}")
             if care_info:
-                # Display Plant Care Info
                 st.markdown(f"**Light:** {care_info['Light Requirements']}")
                 st.markdown(f"**Watering:** {care_info['Watering']}")
                 st.markdown(f"**Humidity:** {care_info['Humidity Preferences']}")
@@ -86,28 +85,25 @@ if tab == "📤 Upload & Identify":
                 st.markdown(f"**Additional Care:** {care_info['Additional Care']}")
                 st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
                 st.markdown(f"*{care_info['Personality']['Prompt']}*")
-
-                # Use Personality and Prompt for Chatbot
-                plant_personality = care_info['Personality']
-                prompt_message = f"You are {plant_personality['Title']} and {', '.join(plant_personality['Traits'])}. {plant_personality['Prompt']}"
-                st.session_state.chat_log.append(("Bot", prompt_message))
-
             else:
                 st.warning("No care info found for this plant.")
 
             st.divider()
             st.subheader("🧠 Chat with your plant:")
-            user_input = st.text_input("Say something to your plant:")
-            if user_input:
-                # Generate Bot's Response Based on Personality
-                plant_response = f"{st.session_state.temp_plant_name} says: 🌱 I'm listening! You said: '{user_input}'"
-                st.session_state.chat_log.append(("You", user_input))
+
+            # User input for chat
+            prompt = st.text_input("Say something to your plant:")
+            if prompt:
+                # Generating a plant response
+                plant_response = f"{st.session_state.temp_plant_name} says: 🌱 I'm listening! You said: '{prompt}'"
+                st.session_state.chat_log.append(("You", prompt))
                 st.session_state.chat_log.append((st.session_state.temp_plant_name, plant_response))
 
-            # Display Chat History
+            # Display chat history
             for speaker, msg in st.session_state.chat_log:
                 st.markdown(f"**{speaker}:** {msg}")
 
+            # Save or discard options
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("💾 Save"):
@@ -173,12 +169,4 @@ elif tab == "🪴 View Saved Plants":
             st.markdown(f"**Humidity:** {care['Humidity Preferences']}")
             st.markdown(f"**Temperature:** {care['Temperature Range']}")
             st.markdown(f"**Feeding:** {care['Feeding Schedule']}")
-            st.markdown(f"**Toxicity:** {care['Toxicity']}")
-            st.markdown(f"**Additional Care:** {care['Additional Care']}")
-            st.markdown(f"**Personality:** *{care['Personality']['Title']}* - {', '.join(care['Personality']['Traits'])}")
-            st.markdown(f"*{care['Personality']['Prompt']}*")
-
-        if "chat_log" in entry:
-            st.subheader("🧠 Chat History")
-            for speaker, msg in entry["chat_log"]:
-                st.markdown(f"**{speaker}:** {msg}")
+            st.markdown(f"**Toxic**
