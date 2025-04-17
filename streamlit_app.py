@@ -145,9 +145,17 @@ if tab == "📤 Upload & Identify":
             st.subheader("🧠 Chat with your plant:")
             prompt = st.text_input("Say something to your plant:")
             if prompt:
-                plant_response = f"{st.session_state.temp_plant_name} says: 🌱 I'm listening! You said: '{prompt}'"
-                st.session_state.chat_log.append(("You", prompt))
+                # Get plant care information from the identified plant
+                care_info = st.session_state.temp_care_info
 
+                # Use the chat_with_plant function to get the response
+                plant_response = chat_with_plant(care_info, prompt)
+
+                # Append the user input and the plant's response to the chat log
+                st.session_state.chat_log.append(("You", prompt))
+                st.session_state.chat_log.append((st.session_state.temp_plant_name, plant_response))
+
+                '''
                 # Add personality info to the messages
                 personality = create_personality_profile(care_info)
                 messages = [
@@ -166,6 +174,7 @@ if tab == "📤 Upload & Identify":
                 # Send message to Gemini API
                 response = send_message(messages)
                 st.session_state.chat_log.append((st.session_state.temp_plant_name, response))
+                '''
 
             for speaker, msg in st.session_state.chat_log:
                 st.markdown(f"**{speaker}:** {msg}")
