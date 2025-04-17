@@ -6,7 +6,7 @@ from io import BytesIO
 
 # ===== API Setup =====
 PLANTNET_API_KEY = "2b10X3YLMd8PNAuKOCVPt7MeUe"
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+GEMINI_API_KEY = "AIzaSyCD3HRndQD3ir_nhNMIZ-ss0EkAEK3DC0U"
 PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent?key={GEMINI_API_KEY}"
 
