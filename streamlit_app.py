@@ -5,9 +5,8 @@ import requests
 from io import BytesIO
 
 # ===== API Setup =====
-API_KEY = "your_real_api_key"
+API_KEY = "2b10X3YLMd8PNAuKOCVPt7MeUe"
 PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
 
 def identify_plant(image_bytes):
     files = {'images': ('image.jpg', image_bytes)}
@@ -27,31 +26,6 @@ def get_care_info(plant_name, care_data):
         if plant["Plant Name"].lower() == plant_name.lower():
             return plant
     return None
-
-def send_message(messages):
-    payload = {
-        "contents": messages
-    }
-    headers = {
-        "Content-Type": "application/json"
-    }
-    response = requests.post(GEMINI_URL, json=payload, headers=headers)
-    if response.status_code == 200:
-        data = response.json()
-        return data['candidates'][0]['content']['parts'][0]['text']
-    else:
-        print("Error:", response.status_code, response.text)
-        return "Something went wrong."
-
-def create_personality_profile(plant):
-    title = plant["Personality"]["Title"]
-    traits = ", ".join(plant["Personality"]["Traits"])
-    prompt = plant["Personality"]["Prompt"]
-    return {
-        "title": title,
-        "traits": traits,
-        "prompt": prompt
-    }
 
 # ===== Load Plant Care JSON =====
 with open("plants_with_personality3_copy.json", "r") as f:
@@ -102,6 +76,7 @@ if tab == "📤 Upload & Identify":
 
             st.subheader(f"🌿 Plant Identified: {plant_name}")
             if care_info:
+                # Display Plant Care Info
                 st.markdown(f"**Light:** {care_info['Light Requirements']}")
                 st.markdown(f"**Watering:** {care_info['Watering']}")
                 st.markdown(f"**Humidity:** {care_info['Humidity Preferences']}")
@@ -111,37 +86,27 @@ if tab == "📤 Upload & Identify":
                 st.markdown(f"**Additional Care:** {care_info['Additional Care']}")
                 st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
                 st.markdown(f"*{care_info['Personality']['Prompt']}*")
+
+                # Use Personality and Prompt for Chatbot
+                plant_personality = care_info['Personality']
+                prompt_message = f"You are {plant_personality['Title']} and {', '.join(plant_personality['Traits'])}. {plant_personality['Prompt']}"
+                st.session_state.chat_log.append(("Bot", prompt_message))
+
             else:
                 st.warning("No care info found for this plant.")
 
             st.divider()
             st.subheader("🧠 Chat with your plant:")
+            user_input = st.text_input("Say something to your plant:")
+            if user_input:
+                # Generate Bot's Response Based on Personality
+                plant_response = f"{st.session_state.temp_plant_name} says: 🌱 I'm listening! You said: '{user_input}'"
+                st.session_state.chat_log.append(("You", user_input))
+                st.session_state.chat_log.append((st.session_state.temp_plant_name, plant_response))
 
-            if care_info:
-                personality = create_personality_profile(care_info)
-
-                prompt = f"You are {personality['title']} and {personality['traits']}. {personality['prompt']}"
-
-                # User message
-                user_message = st.text_input(f"Say something to {plant_name}:")
-                if user_message:
-                    user_message_content = {
-                        "role": "user",
-                        "parts": [{"text": user_message}]
-                    }
-
-                    messages = [
-                        {
-                            "role": "user",
-                            "parts": [{"text": prompt}]
-                        },
-                        user_message_content
-                    ]
-
-                    plant_response = send_message(messages)
-
-                    # Display the response from the Gemini API
-                    st.markdown(f"**{plant_name}:** {plant_response}")
+            # Display Chat History
+            for speaker, msg in st.session_state.chat_log:
+                st.markdown(f"**{speaker}:** {msg}")
 
             col1, col2 = st.columns(2)
             with col1:
