@@ -34,11 +34,12 @@ def chat_with_gemini(messages):
     headers = {
         "Content-Type": "application/json"
     }
-    response = requests.post(API_URL, json=payload, headers=headers)
+    response = requests.post(GEMINI_URL, json=payload, headers=headers)
     if response.status_code == 200:
         data = response.json()
         return data['candidates'][0]['content']['parts'][0]['text']
     else:
+        print("Error:", response.status_code, response.text)
         return "Something went wrong talking to your plant 🤖"
 
 # ===== Load JSON =====
@@ -97,8 +98,8 @@ if tab == "📤 Upload & Identify":
                 st.markdown(f"**Feeding:** {care_info['Feeding Schedule']}")
                 st.markdown(f"**Toxicity:** {care_info['Toxicity']}")
                 st.markdown(f"**Additional Care:** {care_info['Additional Care']}")
-                st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
-                st.markdown(f"*{care_info['Personality']['Prompt']}*")
+                #st.markdown(f"**Personality:** *{care_info['Personality']['Title']}* - {', '.join(care_info['Personality']['Traits'])}")
+                #st.markdown(f"*{care_info['Personality']['Prompt']}*")
             else:
                 st.warning("No care info found for this plant.")
 
