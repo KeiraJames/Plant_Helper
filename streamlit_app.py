@@ -115,7 +115,7 @@ if tab == "📤 Upload & Identify":
                 messages = [
                 {
                     "role": "user",
-                    "parts": [{"text": f"You are {personality['title']} and {personality['traits']}. {personality['prompt']}"}]
+                    "parts": [{"text": f"You are {personality} and {personality}. {personality}"}]
                 }
                 ]
 
