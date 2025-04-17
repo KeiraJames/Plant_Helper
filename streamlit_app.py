@@ -64,7 +64,7 @@ def chat_with_plant(care_info, user_input):
     # Messages include plant personality + prompt to guide the conversation
     messages = [
         {
-            "role": "system",  # This tells Gemini the plant personality
+            "role": "user",  # This tells Gemini the plant personality
             "parts": [{
                 "text": f"You are a plant with a personality called {personality['title']}. "
                         f"Your traits include {personality['traits']}. {personality['prompt']}"
