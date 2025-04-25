@@ -146,13 +146,13 @@ if tab == "📤 Upload & Identify":
                 care_info = st.session_state.temp_care_info
 
                 # Use the chat_with_plant function to get the response
-                plant_response = chat_with_plant(care_info, prompt)
+                # plant_response = chat_with_plant(care_info, prompt)
 
 
                 # When the user inputs a message, only append if it's not a duplicate
                 if len(st.session_state.chat_log) == 0 or st.session_state.chat_log[-1][1] != prompt:
                     # Use the chat_with_plant function to get the response
-                    #plant_response = chat_with_plant(care_info, prompt)
+                    plant_response = chat_with_plant(care_info, prompt)
 
                     # Append the user input and the plant's response to the chat log
                     st.session_state.chat_log.append(("You", prompt))
