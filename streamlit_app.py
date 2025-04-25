@@ -222,3 +222,12 @@ elif tab == "🪴 View Saved Plants":
             st.markdown(f"**Feeding:** {care['Feeding Schedule']}")
             st.markdown(f"**Toxicity:** {care['Toxicity']}")
             st.markdown(f"**Additional Care:** {care['Additional Care']}")
+
+        if "chat_log" in entry and entry["chat_log"]:
+            st.subheader("💬 Chat History")
+            for speaker, msg in entry["chat_log"]:
+                if speaker == "You":
+                    st.markdown(f"🧍‍♀️ **You:** {msg}")
+                else:
+                    st.markdown(f"🌿 **{speaker}:** {msg}")
+
