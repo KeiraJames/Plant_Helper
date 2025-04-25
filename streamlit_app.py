@@ -145,7 +145,6 @@ if tab == "📤 Upload & Identify":
                 # Get plant care information from the identified plant
                 care_info = st.session_state.temp_care_info
 
-                # Use the chat_with_plant function to get the response
                 # plant_response = chat_with_plant(care_info, prompt)
 
 
@@ -189,6 +188,17 @@ if tab == "📤 Upload & Identify":
         name_input = st.text_input("Enter a name to save this plant")
 
         if name_input and st.button("✅ Confirm Save"):
+
+
+             if len(st.session_state.chat_log) >= 4:
+                last_user = st.session_state.chat_log[-4]
+                last_bot = st.session_state.chat_log[-3]
+                penultimate_user = st.session_state.chat_log[-2]
+                penultimate_bot = st.session_state.chat_log[-1]
+
+                if last_user == penultimate_user and last_bot == penultimate_bot:
+                    st.session_state.chat_log = st.session_state.chat_log[:-2]
+            
             encoded = base64.b64encode(st.session_state.temp_photo.getvalue()).decode()
             mime_type = st.session_state.temp_photo.type
             data_url = f"data:{mime_type};base64,{encoded}"
