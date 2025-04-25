@@ -244,7 +244,7 @@ elif tab == "🪴 View Saved Plants":
 
         if "chat_log" in entry and entry["chat_log"]:
             st.subheader("💬 Chat History")
-            for speaker, msg in entry["chat_log"][:-1]:
+            for speaker, msg in entry["chat_log"][:-2]:
                 if speaker.lower() == "you":
                     st.markdown(f"🧍‍♀️ **You:** {msg}")
                 else:
