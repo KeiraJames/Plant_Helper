@@ -188,9 +188,7 @@ if tab == "📤 Upload & Identify":
         name_input = st.text_input("Enter a name to save this plant")
 
         if name_input and st.button("✅ Confirm Save"):
-
-
-             if len(st.session_state.chat_log) >= 4:
+            if len(st.session_state.chat_log) >= 4:
                 last_user = st.session_state.chat_log[-4]
                 last_bot = st.session_state.chat_log[-3]
                 penultimate_user = st.session_state.chat_log[-2]
