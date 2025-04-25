@@ -163,7 +163,7 @@ if tab == "📤 Upload & Identify":
                 #st.session_state.chat_log.append(("You", prompt))
                 #st.session_state.chat_log.append((st.session_state.temp_plant_name, plant_response))
 
-            for speaker, msg in st.session_state.chat_log:
+            for speaker, msg in st.session_state.chat_log[:-2]:
                 st.markdown(f"**{speaker}:** {msg}")
 
             col1, col2 = st.columns(2)
